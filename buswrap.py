@@ -91,10 +91,10 @@ class OBA:
         '''
         pass
 
-    def routes_for_agency():
+    def _routes_for_agency(self, id):
         '''routes-for-agency - get a list of all routes for an agency
         '''
-        pass
+        return self.get_response('routes-for-agency', endpoint=id)
 
     def routes_for_location():
         '''routes-for-location - search for routes near a location, optionally
@@ -185,8 +185,15 @@ class OBA:
         else:
             return r['data']['entry']['time']
 
+    def routes_for_agency(self, id):
+        '''routes-for-agency - get a list of all routes for an agency
+        '''
+        r = self._routes_for_agency(id)
+        return [(route['shortName'],route['description']) for route in r['data']['list']]
 
 oba = OBA(config['api_key'], config['base_url'])
 print(oba.time(True))
 print(oba.get_agencies(True))
 print(oba.agency(1))
+for route in oba.routes_for_agency(1):
+    print(route)
