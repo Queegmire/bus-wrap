@@ -9,6 +9,7 @@ class Entity:
 
 
 class OBA:
+    # dunder methods
     def __init__(self, key, url):
         self.key = key
         self.url = url
@@ -18,6 +19,7 @@ class OBA:
         self.stops = {}
         self.trips = {}
 
+    #  utility methods
     def make_url(self, method, endpoint=None):
         if endpoint:
             method = f'{method}/{endpoint}'
@@ -45,6 +47,7 @@ class OBA:
                 ent = Entity(e)
                 getattr(self, area).update({id: ent})
 
+    # endpoint methods
     def _agencies_with_coverage(self):
         '''agencies-with-coverage - list all supported agencies along with the
         center of their coverage area
@@ -53,12 +56,55 @@ class OBA:
         self.parse_refs(r['data']['references'])
         return r
 
+    def get_agencies(self, names=False):
+        ''' wraps _agencies with coverage
+        '''
+        r = self._agencies_with_coverage()
+        ids = [agen['agencyId'] for agen in r['data']['list']]
+        if names:
+            return [self.agencies[aid].name for aid in ids]
+        else:
+            return ids
+
     def _agency(self, id):
         '''agency - get details for a specific agency
         '''
         r = self.get_response('agency', endpoint=id)
         return r
 
+    def get_agency(self, id):
+        ''' wraps _agency
+        '''
+        r = self._agency(id)
+        return r['data']['entry']['name']
+
+    def _current_time(self):
+        '''current-time - retrieve the current system time
+        '''
+        return self.get_response('current-time')
+
+    def time(self, human=False):
+        ''' wraps _current_time
+        '''
+        r = self._current_time()
+        if human:
+            return r['data']['entry']['readableTime']
+        else:
+            return r['data']['entry']['time']
+
+    def _routes_for_agency(self, id):
+        '''routes-for-agency - get a list of all routes for an agency
+        '''
+        return self.get_response('routes-for-agency', endpoint=id)
+
+    def get_routes_by_agency(self, id):
+        '''wraps _routes_for_agency
+        '''
+        r = self._routes_for_agency(id)
+        return [(route['shortName'],route['description']) for route in r['data']['list']]
+
+
+    # stubs
     def arrival_and_departure_for_stop():
         '''arrival-and-departure-for-stop - details about a specific
         arrival/departure at a stop
@@ -76,11 +122,6 @@ class OBA:
         '''
         pass
 
-    def _current_time(self):
-        '''current-time - retrieve the current system time
-        '''
-        return self.get_response('current-time')
-
     def route_ids_for_agency():
         '''route-ids-for-agency - get a list of all route ids for an agency
         '''
@@ -90,11 +131,6 @@ class OBA:
         '''route - get details for a specific route
         '''
         pass
-
-    def _routes_for_agency(self, id):
-        '''routes-for-agency - get a list of all routes for an agency
-        '''
-        return self.get_response('routes-for-agency', endpoint=id)
 
     def routes_for_location():
         '''routes-for-location - search for routes near a location, optionally
@@ -166,34 +202,9 @@ class OBA:
         '''
         pass
 
-    def agency(self, id):
-        r = self._agency(id)
-        return r['data']['entry']['name']
-
-    def get_agencies(self, names=False):
-        r = self._agencies_with_coverage()
-        ids = [agen['agencyId'] for agen in r['data']['list']]
-        if names:
-            return [self.agencies[aid].name for aid in ids]
-        else:
-            return ids
-
-    def time(self, human=False):
-        r = self._current_time()
-        if human:
-            return r['data']['entry']['readableTime']
-        else:
-            return r['data']['entry']['time']
-
-    def routes_for_agency(self, id):
-        '''routes-for-agency - get a list of all routes for an agency
-        '''
-        r = self._routes_for_agency(id)
-        return [(route['shortName'],route['description']) for route in r['data']['list']]
-
 oba = OBA(config['api_key'], config['base_url'])
 print(oba.time(True))
 print(oba.get_agencies(True))
-print(oba.agency(1))
-for route in oba.routes_for_agency(1):
+print(oba.get_agency(1))
+for route in oba.get_routes_by_agency(1):
     print(route)
