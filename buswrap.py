@@ -1,6 +1,8 @@
-from bwconfig import test as config
-import requests
 import json
+
+import requests
+
+from bwconfig import test as config
 
 
 class Entity:
@@ -101,15 +103,14 @@ class OBA:
         '''wraps _routes_for_agency
         '''
         r = self._routes_for_agency(id)
-        return [(route['shortName'],route['description']) for route in r['data']['list']]
-
+        return [(route['shortName'], route['description']) for route in r['data']['list']]
 
     # stubs
-    def arrival_and_departure_for_stop():
+    def _arrival_and_departure_for_stop(self, stop_id):
         '''arrival-and-departure-for-stop - details about a specific
         arrival/departure at a stop
         '''
-        pass
+        return self.get_response('arrival-and-departure-for-stop', endpoint=stop_id)
 
     def arrivals_and_departures_for_stop():
         '''arrivals-and-departures-for-stop - get current arrivals and
@@ -201,6 +202,7 @@ class OBA:
         '''vehicles-for-agency - get active vehicles for an agency
         '''
         pass
+
 
 oba = OBA(config['api_key'], config['base_url'])
 print(oba.time(True))
