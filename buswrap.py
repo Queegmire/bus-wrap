@@ -5,6 +5,67 @@ import requests
 from bwconfig import test as config
 
 
+class Response:
+    '''The response element carries the following fields:
+        version - response version information
+        code - a machine-readable response code with the following semantics:
+            200 - Success
+            400 - The request could not be understood due to an invalid request parameter or some other error
+            401 - The application key is either missing or invalid
+            404 - The specified resource was not found
+            500 - A service exception or error occurred while processing the request
+        text - a human-readable version of the response code
+        currentTime - current system time on the api server as milliseconds since the unix epoch
+        data - the response payload
+            references see the discussion of references below
+    '''
+    def __init__(self, response_string):
+        json_r = json.loads(response_string.text)
+        if json_r['code'] != 200:
+            raise Exception(f'Method {method} failed with: {json_r["text"]}' +
+                            f' ({json_r["code"]})')
+        self.version = json_r['version']
+        self.code = json_r['code']
+        self.text = json_r['text']
+        self.currentTime = json_r['currentTime']
+        self.data = json_r['data']
+        self.references = self.data['references']
+        self.keys = self.data.keys()
+
+
+class Agency:
+    def __init__(self, data=None):
+        self.id = None
+        self.name = None
+        self.url = None
+        self.timezone = None
+        self.lang = None
+        self.phone = None
+        self.disclaimer = None
+        self.lat = None
+        self.lon = None
+        self.latSpan = None
+        self.lonSpan = None
+        self.update(data)
+    
+    def update(self, data):
+        self.__dict__.update(data)
+
+
+class Agencies:
+    def __init__(self, oba):
+        self.oba = oba
+        agency_json = oba._agencies_with_coverage()
+        self.last_update = agency_json.currentTime
+        self.agency_dict = {}
+        agency_refs = agency_json.references['agencies']
+        for agency in agency_refs:
+            self.agency_dict[agency['id']] = Agency(agency)
+        agencies = agency_json.data['list']
+        for agency in agencies:
+            self.agency_dict[agency['agencyId']].update(agency)
+
+
 class Entity:
     def __init__(self, ent_dict):
         self.__dict__.update(ent_dict)
@@ -15,11 +76,12 @@ class OBA:
     def __init__(self, key, url):
         self.key = key
         self.url = url
-        self.agencies = {}
+        self.agencies = Agencies(self)
         self.routes = {}
         self.situations = {}
         self.stops = {}
         self.trips = {}
+        self.last_access = None
 
     #  utility methods
     def make_url(self, method, endpoint=None):
@@ -27,7 +89,7 @@ class OBA:
             method = f'{method}/{endpoint}'
         return f'{self.url}{method}.json'
 
-    def get_response(self, method, endpoint=None):
+    def get_response_old(self, method, endpoint=None):
         query = self.make_url(method, endpoint)
         r = requests.get(query, {'key': self.key})
         print(f'{query:=^100}')
@@ -42,7 +104,13 @@ class OBA:
             raise Exception(f'Method {method} rate limit exceeded')
         return json_r
 
+    def get_response(self, method, endpoint=None):
+        query = self.make_url(method, endpoint)
+        r = requests.get(query, {'key': self.key})
+        return Response(r)
+
     def parse_refs(self, refs):
+        return 0 # rrj side step while playing with classes
         for area in ['agencies', 'routes', 'situations', 'stops', 'trips']:
             for e in refs[area]:
                 id = e['id']
@@ -55,16 +123,16 @@ class OBA:
         center of their coverage area
         '''
         r = self.get_response('agencies-with-coverage')
-        self.parse_refs(r['data']['references'])
+        self.parse_refs(r.references)
         return r
 
     def get_agencies(self, names=False):
         ''' wraps _agencies with coverage
         '''
         r = self._agencies_with_coverage()
-        ids = [agen['agencyId'] for agen in r['data']['list']]
+        ids = [agen['agencyId'] for agen in r.data['list']]
         if names:
-            return [self.agencies[aid].name for aid in ids]
+            return [self.agencies.agency_dict[aid].name for aid in ids]
         else:
             return ids
 
@@ -73,12 +141,6 @@ class OBA:
         '''
         r = self.get_response('agency', endpoint=id)
         return r
-
-    def get_agency(self, id):
-        ''' wraps _agency
-        '''
-        r = self._agency(id)
-        return r['data']['entry']['name']
 
     def _current_time(self):
         '''current-time - retrieve the current system time
@@ -90,7 +152,7 @@ class OBA:
         '''
         r = self._current_time()
         if human:
-            return r['data']['entry']['readableTime']
+            return r.data['entry']['readableTime']
         else:
             return r['data']['entry']['time']
 
@@ -139,17 +201,6 @@ class OBA:
         '''
         pass
 
-    def schedule_for_stop():
-        '''schedule-for-stop - get the full schedule for a stop on a particular
-        day
-        '''
-        pass
-
-    def shape():
-        '''shape - get details for a specific shape (polyline drawn on a map)
-        '''
-        pass
-
     def stop_ids_for_agency():
         '''stop-ids-for-agency - get a list of all stops for an agency
         '''
@@ -183,30 +234,7 @@ class OBA:
         '''
         pass
 
-    def trip():
-        '''trip - get details for a specific trip
-        '''
-        pass
-
-    def trips_for_location():
-        '''trips-for-location - get active trips near a location
-        '''
-        pass
-
-    def trips_for_route():
-        '''trips-for-route - get active trips for a route
-        '''
-        pass
-
-    def vehicles_for_agency():
-        '''vehicles-for-agency - get active vehicles for an agency
-        '''
-        pass
-
 
 oba = OBA(config['api_key'], config['base_url'])
 print(oba.time(True))
 print(oba.get_agencies(True))
-print(oba.get_agency(1))
-for route in oba.get_routes_by_agency(1):
-    print(route)
