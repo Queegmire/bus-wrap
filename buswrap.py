@@ -6,14 +6,8 @@ from bwconfig import test as config
 
 
 class Response:
-    '''response code- a machine-readable response code with the following semantics:
-            200 - Success
-            400 - The request could not be understood due to an invalid request parameter or some other error
-            401 - The application key is either missing or invalid
-            404 - The specified resource was not found
-            500 - A service exception or error occurred while processing the request
-        data - the response payload
-            references see the discussion of references below
+    '''Wrapper for api response
+     
     '''
     def __init__(self, response_string):
         json_r = json.loads(response_string.text)
@@ -30,7 +24,7 @@ class Response:
 
 
 class Agency:
-    def __init__(self, data=None):
+    def __init__(self, data, ):
         self.id = None
         self.name = None
         self.url = None
@@ -42,24 +36,32 @@ class Agency:
         self.lon = None
         self.latSpan = None
         self.lonSpan = None
-        self.update(data)
+        self.populate(data)
     
-    def update(self, data):
+    def populate(self, data):
         self.__dict__.update(data)
 
+    def getRoutes(self):
+        pass
 
-class Agencies:
+    def getRouteIds(self):
+        pass
+
+    def getStopIds(self):
+        pass
+
+
+class Agencies(dict):
     def __init__(self, oba):
+        '''Contains list of agencies
+        '''
         self.oba = oba
-        agency_json = self._agencies_with_coverage()
-        self.last_update = agency_json.currentTime
-        self.agency_dict = {}
-        agency_refs = agency_json.references['agencies']
-        for agency in agency_refs:
-            self.agency_dict[agency['id']] = Agency(agency)
-        agencies = agency_json.data['list']
-        for agency in agencies:
-            self.agency_dict[agency['agencyId']].update(agency)
+        agencies_json = self._agencies_with_coverage()
+        self.last_update = agencies_json.currentTime
+        for agency_ref in agencies_json.references['agencies']:
+            self[agency_ref['id']] = Agency(agency_ref)
+        for agency_data in agencies_json.data['list']:
+            self[agency_data['agencyId']].populate(agency_data)
 
     def _agencies_with_coverage(self):
         '''agencies-with-coverage - list all supported agencies along with the
@@ -96,25 +98,29 @@ class Route:
         self.type = None
         self.textColor = None
         self.url = None
-        self.update(data)
+        self.populate(data)
     
-    def update(self, data):
+    def populate(self, data):
         self.__dict__.update(data)
 
+    def getStops(self):
+        pass
 
-class Routes:
+    def getTrips(self):
+        pass
+
+class Routes(dict):
     def __init__(self, oba, agency=None):
         self.oba = oba
-        self.route_dict = {}
         self.routes = {}
-        agency_list = list(agency.id) if agency else oba.agencies.agency_dict.keys()
+        agency_list = list(agency.id) if agency else oba.agencies.keys()
         for agency in agency_list:
             self.addAgency(agency)
 
     def addAgency(self, agency):
         route_json = self._routes_for_agency(agency)
         for route in route_json.data['list']:
-            self.route_dict[route['id']] = Route(route)
+            self[route['id']] = Route(route)
         return route_json
 
     def _routes_for_agency(self, id):
@@ -130,7 +136,7 @@ class OBA:
         self.url = url
         self.agencies = Agencies(self)
         self.routes = Routes(self)
-        for agency in self.agencies.agency_dict.values():
+        for agency in self.agencies.values():
             self.routes.addAgency(agency.id)
         self.situations = {}
         self.stops = {}
@@ -188,6 +194,6 @@ class OBA:
 
 oba = OBA(config['api_key'], config['base_url'])
 print(oba.time(True))
-print([agency.name for agency in oba.agencies.agency_dict.values()])
-for route in oba.routes.route_dict.values():
+print([agency.name for agency in oba.agencies.values()])
+for route in oba.routes.values():
     print(route.id, route.shortName)
