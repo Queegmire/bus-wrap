@@ -153,8 +153,20 @@ class Stop():
     arrivals-and-departures-for-stop - get current arrivals and departures for a stop
     schedule-for-stop - get the full schedule for a stop on a particular day
     '''
-    def __init__(self):
-        pass
+    def __init__(self, data):
+        self.id = None
+        self.latitude = None
+        self.longitude = None
+        self.direction = None
+        self.name = None
+        self.code = None
+        self.locationType = None
+        self.wheelchair = None
+        self.route_ids = []
+        self.populate(data)
+
+   def populate(self, data):
+        self.__dict__.update(data)
 
     def _arrival_and_departure_for_stop(self):
         pass
@@ -174,7 +186,7 @@ class Stops(dict):
     stops-for-route - get the set of stops and paths of travel for a particular route
     '''
     def __init__(self, oba):
-        pass
+        self.oba = oba
 
     def _stop_ids_for_agency(self, agency_id):
         pass

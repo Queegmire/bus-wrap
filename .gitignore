@@ -20,3 +20,6 @@ dmypy.json
 
 # VS Code
 .vscode/
+
+# pytest
+.pytest_cache/
