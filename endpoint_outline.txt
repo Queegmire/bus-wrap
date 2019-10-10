@@ -1,0 +1,50 @@
+Agency and Agencies objects
+    Creation
+        agencies-with-coverage - list all supported agencies along with the center of their coverage area
+        agency - get details for a specific agency
+    Methods
+        route-ids-for-agency - get a list of all route ids for an agency
+        routes-for-agency - get a list of all routes for an agency
+        stop-ids-for-agency - get a list of all stops for an agency
+        
+Route and Routes objects
+    Creation
+        route-ids-for-agency - get a list of all route ids for an agency
+        route - get details for a specific route
+        routes-for-agency - get a list of all routes for an agency
+        routes-for-location - search for routes near a location, optionally by route name
+    Methods
+        stops-for-route - get the set of stops and paths of travel for a particular route
+        trips-for-route - get active trips for a route
+
+Stop and Stops objects 
+    Creation
+        stop-ids-for-agency - get a list of all stops for an agency
+        stop - get details for a specific stop
+        stops-for-location - search for stops near a location, optionally by stop code
+        stops-for-route - get the set of stops and paths of travel for a particular route
+    Methods
+        arrival-and-departure-for-stop - details about a specific arrival/departure at a stop
+        arrivals-and-departures-for-stop - get current arrivals and departures for a stop
+        schedule-for-stop - get the full schedule for a stop on a particular day
+
+Trip objects
+    Creation
+        trip-details - get extended details for a specific trip
+        trip-for-vehicle - get extended trip details for current trip of a specific transit vehicle
+        trip - get details for a specific trip
+        trips-for-location - get active trips near a location
+        trips-for-route - get active trips for a route
+
+Vehicle object?
+    vehicles-for-agency - get active vehicles for an agency
+
+Helper endpoints
+    cancel-alarm - cancel a registered alarm
+    current-time - retrieve the current system time
+    plan-trip - plan a trip BETA
+    register-alarm-for-arrival-and-departure-at-stop - register an alarm for an arrival-departure event
+    report-problem-with-stop - submit a user-generated problem for a stop
+    report-problem-with-trip - submit a user-generated problem for a trip
+    shape - get details for a specific shape (polyline drawn on a map)
+

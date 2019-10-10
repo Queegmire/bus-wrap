@@ -9,10 +9,11 @@ class Response:
     '''Wrapper for api response
      
     '''
-    def __init__(self, response_string):
+    def __init__(self, response_string, method=None):
         json_r = json.loads(response_string.text)
         if json_r['code'] != 200:
-            raise Exception(f'Method {method} failed with: {json_r["text"]}' +
+            source = f'Method {method}' if method else 'Call'
+            raise Exception(f'{source} failed with: {json_r["text"]}' +
                             f' ({json_r["code"]})')
         self.version = json_r['version']
         self.code = json_r['code']
@@ -68,7 +69,6 @@ class Agencies(dict):
         center of their coverage area
         '''
         r = self.oba.get_response('agencies-with-coverage')
-        self.oba.parse_refs(r.references)
         return r
 
     def _agency(self, id):
@@ -76,6 +76,12 @@ class Agencies(dict):
         '''
         r = self.oba.get_response('agency', endpoint=id)
         return r
+
+
+class Location:
+    def __init__(self, center, span=1000):
+        self.latitude, self.longitude = center
+        self.span = span
 
 
 class Route:
@@ -103,11 +109,23 @@ class Route:
     def populate(self, data):
         self.__dict__.update(data)
 
+    def _agencies_with_coverage(self):
+        '''agencies-with-coverage - list all supported agencies along with the
+        center of their coverage area
+        '''
+        r = self.oba.get_response('agencies-with-coverage')
+        self.oba.parse_refs(r.references)
+        return r
+
+    def _stops_for_route(self):
+        pass
+
     def getStops(self):
         pass
 
     def getTrips(self):
         pass
+
 
 class Routes(dict):
     def __init__(self, oba, agency=None):
@@ -127,6 +145,48 @@ class Routes(dict):
         '''routes-for-agency - get a list of all routes for an agency
         '''
         return self.oba.get_response('routes-for-agency', endpoint=id)
+
+
+class Stop():
+    '''
+    arrival-and-departure-for-stop - details about a specific arrival/departure at a stop
+    arrivals-and-departures-for-stop - get current arrivals and departures for a stop
+    schedule-for-stop - get the full schedule for a stop on a particular day
+    '''
+    def __init__(self):
+        pass
+
+    def _arrival_and_departure_for_stop(self):
+        pass
+
+    def _arrivals_and_departures_for_stop(self):
+        pass
+
+    def _schedule_for_stop(self):
+        pass
+
+
+class Stops(dict):
+    '''
+    stop-ids-for-agency - get a list of all stops for an agency
+    stop - get details for a specific stop
+    stops-for-location - search for stops near a location, optionally by stop code
+    stops-for-route - get the set of stops and paths of travel for a particular route
+    '''
+    def __init__(self, oba):
+        pass
+
+    def _stop_ids_for_agency(self, agency_id):
+        pass
+
+    def _stop(self, stop_id):
+        pass
+
+    def _stops_for_location(self, location):
+        pass
+    
+    def _stops_for_route(self, route_id):
+        pass
 
 
 class OBA:
@@ -152,15 +212,7 @@ class OBA:
     def get_response(self, method, endpoint=None):
         query = self.make_url(method, endpoint)
         r = requests.get(query, {'key': self.key})
-        return Response(r)
-
-    def parse_refs(self, refs):
-        return 0 # rrj side step while playing with classes
-        for area in ['agencies', 'routes', 'situations', 'stops', 'trips']:
-            for e in refs[area]:
-                id = e['id']
-                ent = Entity(e)
-                getattr(self, area).update({id: ent})
+        return Response(r, method)
 
     # endpoint methods
     def _current_time(self):
@@ -175,13 +227,7 @@ class OBA:
         if human:
             return r.data['entry']['readableTime']
         else:
-            return r['data']['entry']['time']
-
-    def get_routes_by_agency(self, id):
-        '''wraps _routes_for_agency
-        '''
-        r = self._routes_for_agency(id)
-        return [(route['shortName'], route['description']) for route in r['data']['list']]
+            return r.data['entry']['time']
 
     # stubs
     def _arrival_and_departure_for_stop(self, stop_id):
@@ -189,7 +235,6 @@ class OBA:
         arrival/departure at a stop
         '''
         return self.get_response('arrival-and-departure-for-stop', endpoint=stop_id)
-
 
 
 oba = OBA(config['api_key'], config['base_url'])
