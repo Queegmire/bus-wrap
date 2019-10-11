@@ -85,7 +85,9 @@ class Location:
 
 
 class Route:
-    def __init__(self, data=None):
+    def __init__(self, oba, data=None):
+        self.oba = oba
+        self.stops = Stops(self.oba)
         self.id = None
         self.agencyId = None
         self.color = None
@@ -109,16 +111,11 @@ class Route:
     def populate(self, data):
         self.__dict__.update(data)
 
-    def _agencies_with_coverage(self):
-        '''agencies-with-coverage - list all supported agencies along with the
-        center of their coverage area
-        '''
-        r = self.oba.get_response('agencies-with-coverage')
-        self.oba.parse_refs(r.references)
-        return r
-
     def _stops_for_route(self):
-        pass
+        r = self.oba.get_response("stops-for-route", self.id)
+        for stop in r.data['references']['stops']:
+            self.stops[stop['id']] = Stop(stop)
+        return r
 
     def getStops(self):
         pass
@@ -138,7 +135,7 @@ class Routes(dict):
     def addAgency(self, agency):
         route_json = self._routes_for_agency(agency)
         for route in route_json.data['list']:
-            self[route['id']] = Route(route)
+            self[route['id']] = Route(self.oba, route)
         return route_json
 
     def _routes_for_agency(self, id):
@@ -165,7 +162,7 @@ class Stop():
         self.route_ids = []
         self.populate(data)
 
-   def populate(self, data):
+    def populate(self, data):
         self.__dict__.update(data)
 
     def _arrival_and_departure_for_stop(self):
@@ -183,7 +180,6 @@ class Stops(dict):
     stop-ids-for-agency - get a list of all stops for an agency
     stop - get details for a specific stop
     stops-for-location - search for stops near a location, optionally by stop code
-    stops-for-route - get the set of stops and paths of travel for a particular route
     '''
     def __init__(self, oba):
         self.oba = oba
@@ -195,9 +191,6 @@ class Stops(dict):
         pass
 
     def _stops_for_location(self, location):
-        pass
-    
-    def _stops_for_route(self, route_id):
         pass
 
 
@@ -250,7 +243,13 @@ class OBA:
 
 
 oba = OBA(config['api_key'], config['base_url'])
-print(oba.time(True))
 print([agency.name for agency in oba.agencies.values()])
-for route in oba.routes.values():
-    print(route.id, route.shortName)
+routes = oba.routes.values()
+'''for route in routes:
+    print(route.id, route.shortName)'''
+print(len(routes))
+route50 = oba.routes["1_100230"]
+route50._stops_for_route()
+for stop in route50.stops.values():
+    print(stop.name)
+print(oba.time(True))
