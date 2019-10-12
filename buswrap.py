@@ -113,15 +113,13 @@ class Route:
 
     def _stops_for_route(self):
         r = self.oba.get_response("stops-for-route", self.id)
-        for stop in r.data['references']['stops']:
-            self.stops[stop['id']] = Stop(stop)
         return r
 
     def getStops(self):
-        pass
-
-    def getTrips(self):
-        pass
+        response = self._stops_for_route()
+        for stop in response.data['references']['stops']:
+            self.stops[stop['id']] = Stop(stop)
+        self.groupings = response.data['entry']['stopGroupings']
 
 
 class Routes(dict):
@@ -243,13 +241,16 @@ class OBA:
 
 
 oba = OBA(config['api_key'], config['base_url'])
+print('---- list of agencies ----')
 print([agency.name for agency in oba.agencies.values()])
 routes = oba.routes.values()
 '''for route in routes:
     print(route.id, route.shortName)'''
-print(len(routes))
-route50 = oba.routes["1_100230"]
-route50._stops_for_route()
-for stop in route50.stops.values():
-    print(stop.name)
-print(oba.time(True))
+print(f'Number of routes: {len(routes)}')
+route_number = "120"
+for route in routes:
+    if route.shortName == route_number:
+        print(f'*> Route {route_number}: id={route.id}')
+        route.getStops()
+        print(f'Stops on route: {len(route.stops)}')
+print(f'Current time: {oba.time(True)}')
