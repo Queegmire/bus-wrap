@@ -11,14 +11,15 @@ class OBA:
     def __init__(self, key, url):
         self.key = key
         self.url = url
-        self.agencies = Agencies(self)
-        self.routes = Routes(self)
-        for agency in self.agencies.values():
-            self.routes.addAgency(agency.id)
         self.situations = {}
         self.stops = {}
         self.trips = {}
         self.last_access = None
+        self.session = None
+        self.agencies = Agencies(self)
+        self.routes = Routes(self)
+        for agency in self.agencies.values():
+            self.routes.addAgency(agency.id)
 
     #  utility methods
     def make_url(self, method, endpoint=None):
@@ -27,8 +28,10 @@ class OBA:
         return f'{self.url}{method}.json'
 
     def get_response(self, method, endpoint=None):
+        if not self.session:
+            self.session = requests.Session()
         query = self.make_url(method, endpoint)
-        r = requests.get(query, {'key': self.key})
+        r = self.session.get(query, params={'key': self.key})
         return Response(r, method)
 
     # endpoint methods
