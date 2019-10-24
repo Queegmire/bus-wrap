@@ -40,14 +40,15 @@ class Route:
 
 
 class Routes(dict):
-    def __init__(self, oba, agency=None):
+    def __init__(self, oba, *, agency=None, auto_load=True):
         self.oba = oba
         self.routes = {}
-        agency_list = list(agency.id) if agency else oba.agencies.keys()
-        for agency in agency_list:
-            self.addAgency(agency)
+        if auto_load:
+            agency_list = list(agency.id) if agency else oba.agencies.keys()
+            for agency in agency_list:
+                self.add_routes_from_agency(agency)
 
-    def addAgency(self, agency):
+    def add_routes_from_agency(self, agency):
         route_json = self._routes_for_agency(agency)
         for route in route_json.data['list']:
             self[route['id']] = Route(self.oba, route)

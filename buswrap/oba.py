@@ -8,7 +8,7 @@ from .route import Routes
 
 class OBA:
     # dunder methods
-    def __init__(self, key, url):
+    def __init__(self, key, url, *, auto_load=True):
         self.key = key
         self.url = url
         self.situations = {}
@@ -16,10 +16,10 @@ class OBA:
         self.trips = {}
         self.last_access = None
         self.session = None
-        self.agencies = Agencies(self)
-        self.routes = Routes(self)
+        self.agencies = Agencies(self, auto_load=auto_load)
+        self.routes = Routes(self, auto_load=auto_load)
         for agency in self.agencies.values():
-            self.routes.addAgency(agency.id)
+            self.routes.add_routes_from_agency(agency.id)
 
     #  utility methods
     def make_url(self, method, endpoint=None):

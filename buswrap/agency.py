@@ -1,5 +1,5 @@
 class Agency:
-    def __init__(self, data, ):
+    def __init__(self, data):
         self.id = None
         self.name = None
         self.url = None
@@ -27,16 +27,18 @@ class Agency:
 
 
 class Agencies(dict):
-    def __init__(self, oba):
+    def __init__(self, oba, *, auto_load=True):
         '''Contains list of agencies
         '''
         self.oba = oba
-        agencies_json = self._agencies_with_coverage()
-        self.last_update = agencies_json.currentTime
-        for agency_ref in agencies_json.references['agencies']:
-            self[agency_ref['id']] = Agency(agency_ref)
-        for agency_data in agencies_json.data['list']:
-            self[agency_data['agencyId']].populate(agency_data)
+        self.last_update = None
+        if auto_load:
+            agencies_json = self._agencies_with_coverage()
+            self.last_update = agencies_json.currentTime
+            for agency_ref in agencies_json.references['agencies']:
+                self[agency_ref['id']] = Agency(agency_ref)
+            for agency_data in agencies_json.data['list']:
+                self[agency_data['agencyId']].populate(agency_data)
 
     def _agencies_with_coverage(self):
         '''agencies-with-coverage - list all supported agencies along with the
