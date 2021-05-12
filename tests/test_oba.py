@@ -25,7 +25,7 @@ def test_time_epoch():
 
 def test_agency_count():
     agency_count = len(oba.agencies)
-    assert agency_count == 11
+    assert 20 > agency_count > 5
 
 def test_agency_kc():
     kc = oba.agencies['1']
