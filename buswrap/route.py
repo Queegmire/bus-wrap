@@ -25,6 +25,14 @@ class Route:
         self.url = None
         self.populate(data)
     
+    def __repr__(self):
+        if self.longName:
+            return f'{self.id}: {self.longName}'
+        elif self.shortName:
+            return f'{self.id}: {self.shortName}'
+        else:
+            return f'{self.id}: {self.name}'
+
     def populate(self, data):
         self.__dict__.update(data)
 

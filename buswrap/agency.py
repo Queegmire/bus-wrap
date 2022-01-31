@@ -12,7 +12,10 @@ class Agency:
         self.latSpan = None
         self.lonSpan = None
         self.populate(data)
-    
+
+    def __repr__(self):
+        return f'{self.id}: {self.name}'
+
     def populate(self, data):
         self.__dict__.update(data)
 

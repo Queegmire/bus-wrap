@@ -16,6 +16,9 @@ class Stop():
         self.route_ids = []
         self.populate(data)
 
+    def __repr__(self):
+        return f'{self.name} - {self.direction}'
+
     def populate(self, data):
         self.__dict__.update(data)
 
